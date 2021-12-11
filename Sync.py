@@ -14,7 +14,7 @@ def gotTeleMessage(update: Update, context: CallbackContext) -> None:
 		   update.effective_user.last_name else update.effective_user.first_name
 	log(f"Got a message from {user} on Telegram!")
 	teleMsg=(
-		update.message.text if update.message.text else 'Blank',user,
+		update.message.text if update.message.text else None,user,
 		bool(update.message.effective_attachment)
 	)
 	teleMsgStack+=[teleMsg]
@@ -39,6 +39,7 @@ from discord.ext.commands import Bot
 bot=commands.Bot(command_prefix="-")
 
 def start(str,startCh):
+	str=str.rstrip("\n")
 	return startCh+('\n'+startCh).join(str.split("\n"))
 
 from asyncio import sleep
@@ -47,40 +48,43 @@ async def on_ready(): #initialize
 	global teleMsgStack,discordMsgStack
 	log("Logged into discord as '{0.user}'!".format(bot),type='success')
 	channel=bot.get_channel(prefs["DiscordChannel"])
+	lastTeleUser=None
+	lastDiscordUser=None
 	while True:
 		await sleep(0.05)
 		if teleMsgStack:
 			teleMsg=teleMsgStack.pop(0)
 			await channel.send(
-				f"__**{teleMsg[1]}**__:\n"+
+				(f"__**{teleMsg[1]}**__:\n" if teleMsg[1]!=lastTeleUser else "")+
 				start(
-					teleMsg[0].rstrip("\n")+(
-						("\n**__1 Attachment__**") if teleMsg[2] else ""
+					((teleMsg[0].rstrip("\n")+"\n") if teleMsg[0]!=None else "")+(
+						("**__1 Attachment (see on telegram)__**") if teleMsg[2] else ""
 					)
 				,'> ')
 			)
 			log("Forwarded telegram message!",type="success")
-			teleMsg=""
+			lastTeleUser=teleMsg[1]
+			lastDiscordUser=None
 		if discordMsgStack:
 			discordMsg=discordMsgStack.pop(0)
 			teleBot.send_message(
 				prefs["TelegramChannel"],
-				f"{discordMsg[1]}:\n"+
+				(f"{discordMsg[1]}:\n" if lastDiscordUser!=discordMsg[1] else "")+
 				start(
 					discordMsg[0].rstrip("\n")+(
 						(
 							"\nAttachments:\n"+
 							start(
 								"\n".join(discordMsg[2]),
-								" |   "
+								"|   "
 							)
 						) if discordMsg[2] else ""
 					)
-				,' |   ')
+				,'|   ')
 			)
 			log("Forwarded discord message!",type="success")
-			discordMsg=""
-
+			lastDiscordUser=discordMsg[1]
+			lastTeleUser=None
 
 discordMsgStack=[]
 @bot.event

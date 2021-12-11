@@ -7,9 +7,6 @@ from TermManip import *
 forwarded=0
 prefs=yamlload(open("Prefs.yaml",'r').read())
 
-def stats(update: Update, context: CallbackContext) -> None:
-	update.message.reply_text(f"I have forwarded {forwarded} messages")
-
 teleMsg=None
 def gotTeleMessage(update: Update, context: CallbackContext) -> None:
 	global teleMsg
@@ -24,7 +21,6 @@ updater.dispatcher.add_handler(
 	MessageHandler((Filters.text & Filters.chat(prefs['TelegramChannel']) & ~(Filters.command))
 		,gotTeleMessage)
 )
-updater.dispatcher.add_handler(CommandHandler('stats', stats))
 
 teleBot=Bot(prefs['Telegram'])
 

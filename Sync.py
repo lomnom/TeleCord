@@ -42,6 +42,11 @@ def start(str,startCh):
 	str=str.rstrip("\n")
 	return startCh+('\n'+startCh).join(str.split("\n"))
 
+def escape(chrs,str):
+	for char in chrs:
+		str=str.replace(char,"\\"+char)
+	return str
+
 from asyncio import sleep
 @bot.event
 async def on_ready(): #initialize
@@ -55,7 +60,10 @@ async def on_ready(): #initialize
 		if teleMsgStack:
 			teleMsg=teleMsgStack.pop(0)
 			await channel.send(
-				(f"__**{teleMsg[1]}**__:\n" if teleMsg[1]!=lastTeleUser else "")+
+				(
+					f"__**{teleMsg[1]}**__:\n" 
+					if teleMsg[1]!=lastTeleUser else ""
+				)+
 				start(
 					((teleMsg[0].rstrip("\n")+"\n") if teleMsg[0]!=None else "")+(
 						("**__1 Attachment (see on telegram)__**") if teleMsg[2] else ""
@@ -69,18 +77,27 @@ async def on_ready(): #initialize
 			discordMsg=discordMsgStack.pop(0)
 			teleBot.send_message(
 				prefs["TelegramChannel"],
-				(f"{discordMsg[1]}:\n" if lastDiscordUser!=discordMsg[1] else "")+
-				start(
-					discordMsg[0].rstrip("\n")+(
+				(
+					(
+						f"*__{discordMsg[1]}__*:\n" 
+						if lastDiscordUser!=discordMsg[1] else ""
+					)+
+					start(
+						escape("#~*_^",discordMsg[0]).rstrip("\n")+
 						(
-							"\nAttachments:\n"+
-							start(
-								"\n".join(discordMsg[2]),
-								"|   "
-							)
-						) if discordMsg[2] else ""
-					)
-				,'|   ')
+							(
+								"\n__*Attachments:*__\n"+
+								start(
+									"\n".join(discordMsg[2]),
+									"*|*   "
+								)
+							) if discordMsg[2] else ""
+						)
+					,'*|*   ')
+				).replace('#','\\#')
+				 .replace('|','\\|'),
+
+				parse_mode='MarkdownV2'
 			)
 			log("Forwarded discord message!",type="success")
 			lastDiscordUser=discordMsg[1]

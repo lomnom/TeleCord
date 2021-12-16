@@ -42,10 +42,8 @@ def start(str,startCh):
 	str=str.rstrip("\n")
 	return startCh+('\n'+startCh).join(str.split("\n"))
 
-def escape(chrs,str):
-	for char in chrs:
-		str=str.replace(char,"\\"+char)
-	return str
+def escape(str):
+	return "\\"+"\\".join(list(str))
 
 from asyncio import sleep
 @bot.event
@@ -75,31 +73,40 @@ async def on_ready(): #initialize
 			lastDiscordUser=None
 		if discordMsgStack:
 			discordMsg=discordMsgStack.pop(0)
-			teleBot.send_message(
-				prefs["TelegramChannel"],
-				(
+			try:
+				teleBot.send_message(
+					prefs["TelegramChannel"],
 					(
-						f"*__{discordMsg[1]}__*:\n" 
-						if lastDiscordUser!=discordMsg[1] else ""
-					)+
-					start(
-						escape("#~*_^",discordMsg[0]).rstrip("\n")+
 						(
+							f"*__{escape(discordMsg[1])}__*:\n" 
+							if lastDiscordUser!=discordMsg[1] else ""
+						)+
+						start(
+							escape(discordMsg[0]).rstrip("\n")+
 							(
-								"\n__*Attachments:*__\n"+
-								start(
-									"\n".join(discordMsg[2]),
-									"*|*   "
-								)
-							) if discordMsg[2] else ""
-						)
-					,'*|*   ')
-				).replace('#','\\#')
-				 .replace('|','\\|'),
+								(
+									"\n__*Attachments:*__\n"+
+									start(
+										"\n".join(discordMsg[2]),
+										"*|*   "
+									)
+								) if discordMsg[2] else ""
+							)
+						,'*\\|*   ')
+					),
 
-				parse_mode='MarkdownV2'
-			)
-			log("Forwarded discord message!",type="success")
+					parse_mode='MarkdownV2'
+				)
+				log("Forwarded discord message!",type="success")
+			except Exception as e:
+				log(f"Forwarding discord message failed ('{e}')!"
+					f"\nMessage: {discordMsg[0]}"
+					f"\nSender: {discordMsg[1]}",type="error"
+				)
+				teleBot.send_message(
+					f"Forwarding discord message failed ('{e}')!"
+				)
+			
 			lastDiscordUser=discordMsg[1]
 			lastTeleUser=None
 

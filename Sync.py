@@ -36,7 +36,9 @@ import discord
 from discord.ext import commands,tasks
 from discord.ext.commands import Bot
 
-bot=commands.Bot(command_prefix="-")
+intents=discord.Intents.default()
+intents.message_content=True
+bot=commands.Bot(command_prefix="-",intents=intents)
 
 def start(str,startCh):
 	str=str.rstrip("\n")
@@ -116,6 +118,7 @@ async def on_message(message):
 		return
 	log(f"Got message from {str(message.author)} on discord!")
 	discordMsg=(message.content,str(message.author),list(map(lambda x:x.url,message.attachments)))
+	print(discordMsg)
 	discordMsgStack+=[discordMsg]
 
 bot.run(prefs["Discord"])

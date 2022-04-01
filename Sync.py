@@ -50,20 +50,20 @@ from asyncio import sleep
 async def on_ready(): #initialize
 	global teleMsgStack,discordMsgStack
 	log("Logged into discord as '{0.user}'!".format(bot),type='success')
-	channel=bot.get_channel(prefs["DiscordChannel"])
+	channel=bot.guilds[0].get_channel_or_thread(prefs["DiscordChannel"])
+	await channel.send("Telecord is up!")
 	lastTeleUser=None
 	lastDiscordUser=None
 	while True:
 		await sleep(0.05)
 		if teleMsgStack:
 			teleMsg=teleMsgStack.pop(0)
+			usernameHeader=f"__**{teleMsg[1]}**__:\n" if teleMsg[1]!=lastTeleUser else ""
+			messageContents=(teleMsg[0].rstrip("\n")+"\n") if teleMsg[0]!=None else ""
 			await channel.send(
-				(
-					f"__**{teleMsg[1]}**__:\n" 
-					if teleMsg[1]!=lastTeleUser else ""
-				)+
+				usernameHeader+
 				start(
-					((teleMsg[0].rstrip("\n")+"\n") if teleMsg[0]!=None else "")+(
+					messageContents+(
 						("**__1 Attachment (see on telegram)__**") if teleMsg[2] else ""
 					)
 				,'> ')
@@ -73,14 +73,12 @@ async def on_ready(): #initialize
 			lastDiscordUser=None
 		if discordMsgStack:
 			discordMsg=discordMsgStack.pop(0)
+			usernameHeader="*__"+escape(discordMsg[1])+"__*:\n" if lastDiscordUser!=discordMsg[1] else ""
 			try:
 				teleBot.send_message(
 					prefs["TelegramChannel"],
 					(
-						(
-							f"*__{escape(discordMsg[1])}__*:\n" 
-							if lastDiscordUser!=discordMsg[1] else ""
-						)+
+						usernameHeader+
 						start(
 							escape(discordMsg[0]).rstrip("\n")+
 							(
